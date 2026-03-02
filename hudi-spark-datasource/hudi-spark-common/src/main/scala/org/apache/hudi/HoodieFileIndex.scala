@@ -527,6 +527,14 @@ object HoodieFileIndex extends Logging {
       properties.setProperty(DataSourceReadOptions.FILE_INDEX_LISTING_MODE_OVERRIDE.key, listingModeOverride)
     }
 
+    // Check if partition value extractor class need to be used during reads.
+    val usePartitionValueExtractorOnRead = getConfigValue(options, sqlConf,
+      DataSourceReadOptions.USE_PARTITION_VALUE_EXTRACTOR_ON_READ.key,
+      DataSourceReadOptions.USE_PARTITION_VALUE_EXTRACTOR_ON_READ.defaultValue())
+    properties.setProperty(DataSourceReadOptions.USE_PARTITION_VALUE_EXTRACTOR_ON_READ.key,
+      usePartitionValueExtractorOnRead)
+
+    // Check if path filter optimized listing is enabled on reads.
     var pathFilterOptimizedListingEnabled = getConfigValue(options, sqlConf,
       DataSourceReadOptions.FILE_INDEX_LIST_FILE_STATUSES_USING_RO_PATH_FILTER.key, null)
     if (pathFilterOptimizedListingEnabled != null) {
@@ -545,6 +553,7 @@ object HoodieFileIndex extends Logging {
     if (tableConfig != null) {
       properties.setProperty(RECORDKEY_FIELD.key, tableConfig.getRecordKeyFields.orElse(Array.empty).mkString(","))
       properties.setProperty(PARTITIONPATH_FIELD.key, HoodieTableConfig.getPartitionFieldPropForKeyGenerator(tableConfig).orElse(""))
+      properties.setProperty(HoodieTableConfig.PARTITION_EXTRACTOR_CLASS.key(), tableConfig.getPartitionExtractorClass.orElse(""))
 
       // for simple bucket index, we need to set the INDEX_TYPE, BUCKET_INDEX_HASH_FIELD, BUCKET_INDEX_NUM_BUCKETS
       val database = getDatabaseName(tableConfig, spark.catalog.currentDatabase)

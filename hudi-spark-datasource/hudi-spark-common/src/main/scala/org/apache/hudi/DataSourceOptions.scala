@@ -290,6 +290,15 @@ object DataSourceReadOptions {
     .sinceVersion("1.1.0")
     .withDocumentation("Fully qualified class name of the catalog that is used by the Polaris spark client.")
 
+  val USE_PARTITION_VALUE_EXTRACTOR_ON_READ: ConfigProperty[String] = ConfigProperty
+    .key("hoodie.datasource.read.partition.value.extractor.enabled")
+    .defaultValue("false")
+    .markAdvanced()
+    .sinceVersion("1.2.0")
+    .withDocumentation("This config helps whether PartitionValueExtractor interface can be used" +
+      " for parsing partition values from partition path. When this config is enabled, it uses" +
+      " PartitionValueExtractor class value stored in the hoodie.properties file.")
+
   /** @deprecated Use {@link QUERY_TYPE} and its methods instead */
   @Deprecated
   val QUERY_TYPE_OPT_KEY = QUERY_TYPE.key()
@@ -512,6 +521,14 @@ object DataSourceWriteOptions {
     .withDocumentation("Key generator class, that implements `org.apache.hudi.keygen.KeyGenerator`")
 
   val KEYGENERATOR_CONSISTENT_LOGICAL_TIMESTAMP_ENABLED: ConfigProperty[String] = KeyGeneratorOptions.KEYGENERATOR_CONSISTENT_LOGICAL_TIMESTAMP_ENABLED
+
+  val PARTITION_EXTRACTOR_CLASS: ConfigProperty[String] = ConfigProperty
+    .key("hoodie.datasource.partition_extractor_class")
+    .noDefaultValue()
+    .markAdvanced()
+    .sinceVersion("1.2.0")
+    .withDocumentation("PartitionValueExtractor implementation used by Spark datasource write/read paths " +
+      "to parse partition values from partition paths.")
 
   val ENABLE_ROW_WRITER: ConfigProperty[String] = ConfigProperty
     .key("hoodie.datasource.write.row.writer.enable")
@@ -1073,6 +1090,12 @@ object DataSourceOptionsHelper {
     }
     if (!params.contains(DataSourceWriteOptions.KEYGENERATOR_CLASS_NAME.key()) && tableConfig.getKeyGeneratorClassName != null) {
       missingWriteConfigs ++= Map(DataSourceWriteOptions.KEYGENERATOR_CLASS_NAME.key() -> tableConfig.getKeyGeneratorClassName)
+    }
+    if (!params.contains(DataSourceWriteOptions.PARTITION_EXTRACTOR_CLASS.key())
+        && tableConfig.getPartitionExtractorClass.isPresent) {
+      missingWriteConfigs ++= Map(
+        DataSourceWriteOptions.PARTITION_EXTRACTOR_CLASS.key() -> tableConfig.getPartitionExtractorClass.get()
+      )
     }
     if (!params.contains(HoodieWriteConfig.WRITE_PAYLOAD_CLASS_NAME.key()) && tableConfig.getPayloadClass != null) {
       missingWriteConfigs ++= Map(HoodieWriteConfig.WRITE_PAYLOAD_CLASS_NAME.key() -> tableConfig.getPayloadClass)
